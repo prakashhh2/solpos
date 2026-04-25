@@ -10,6 +10,8 @@ export interface AnalyticsResult {
   loyaltyInsight: string;
   suggestions: string[];
   summary: string;
+  lowStockAlerts: Array<{ name: string; totalSold: number; alert: string }>;
+  topCombos: Array<{ items: string[]; count: number; tip: string }>;
 }
 
 export async function POST(req: Request) {
@@ -20,7 +22,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "No transactions provided" }, { status: 400 });
     }
 
-    // Build a compact summary to send to Gemini
     const txSummary = transactions.map((t: {
       amount: number;
       timestamp: string;
@@ -55,7 +56,13 @@ Analyze this data and respond ONLY with valid JSON (no markdown, no extra text) 
     "Specific actionable tip 2",
     "Specific actionable tip 3"
   ],
-  "summary": "2–3 sentence plain-English summary of sales performance"
+  "summary": "2–3 sentence plain-English summary of sales performance",
+  "lowStockAlerts": [
+    { "name": "Coca-Cola 12oz", "totalSold": 8, "alert": "Selling fast — restock soon" }
+  ],
+  "topCombos": [
+    { "items": ["Coca-Cola 12oz", "Lays Chips 1oz"], "count": 3, "tip": "Bundle these at a 10% discount to boost sales" }
+  ]
 }
 
 Rules:
@@ -64,9 +71,11 @@ Rules:
 - paymentBreakdown: include only methods that appear in the data
 - suggestions: 3 clear, practical actions the vendor can take NOW to increase profit
 - loyaltyInsight: focus on repeat patterns, time habits, or payment loyalty
+- lowStockAlerts: products with the highest sales velocity that the vendor should reorder; top 3 max
+- topCombos: pairs or groups of products that appear together in the same transaction most often; top 3 max; include a bundle/discount tip for each
 - Keep all text short and practical — no jargon`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemma-3-4b-it" });
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
     const cleaned = text.replace(/```json\n?|\n?```/g, "").trim();

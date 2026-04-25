@@ -202,6 +202,36 @@ export default function HistoryPage() {
             </div>
           </div>
 
+          {/* Low Stock + Combos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {analytics.lowStockAlerts && analytics.lowStockAlerts.length > 0 && (
+              <div className="bg-white/5 rounded-xl p-4 space-y-3">
+                <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">📦 Restock Alerts</p>
+                {analytics.lowStockAlerts.map((a, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <span className="mt-0.5 text-orange-400 text-sm shrink-0">⚠</span>
+                    <div>
+                      <p className="text-sm text-white font-medium">{a.name}</p>
+                      <p className="text-xs text-zinc-400">{a.totalSold} sold · {a.alert}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {analytics.topCombos && analytics.topCombos.length > 0 && (
+              <div className="bg-white/5 rounded-xl p-4 space-y-3">
+                <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">🤝 Top Combos</p>
+                {analytics.topCombos.map((c, i) => (
+                  <div key={i} className="space-y-0.5">
+                    <p className="text-sm text-white font-medium">{c.items.join(" + ")}</p>
+                    <p className="text-xs text-zinc-400">Bought together {c.count}× · {c.tip}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Suggestions */}
           <div className="bg-white/5 rounded-xl p-4 space-y-2">
             <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium mb-3">🚀 Action Plan</p>

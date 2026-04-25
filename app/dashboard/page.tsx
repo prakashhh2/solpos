@@ -15,13 +15,26 @@ interface Product {
   category: string;
   price: number;
   barcode: string;
+  taxRate: number;
 }
 
 interface CartItem extends Product {
   qty: number;
 }
 
-const TAX_RATE_DEFAULT = 8.5;
+const TAX_RATE_DEFAULT = 1;
+
+// US-style category tax rates (%) — overridden by Gemini when AI lookup is used
+const CATEGORY_TAX: Record<string, number> = {
+  "Food & Grocery": 0,
+  "Electronics": 8,
+  "Clothing": 5,
+  "Health & Beauty": 6,
+  "Home & Garden": 7,
+  "Toys & Games": 7,
+  "Sports": 7,
+  "Other": TAX_RATE_DEFAULT,
+};
 
 const CATEGORIES = [
   "Food & Grocery",
@@ -69,13 +82,13 @@ export default function POSDashboard() {
     price: "",
     barcode: "",
     qty: "1",
+    taxRate: CATEGORY_TAX["Food & Grocery"],
   });
   const [lookingUp, setLookingUp] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [showSolanaCheckout, setShowSolanaCheckout] = useState(false);
   const [inventory, setInventory] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [taxRate, setTaxRate] = useState(TAX_RATE_DEFAULT);
   const barcodeRef = useRef<HTMLInputElement>(null);
 
   const handleAILookup = useCallback(async () => {
@@ -91,14 +104,17 @@ export default function POSDashboard() {
       const json = await res.json();
       if (json.ok && json.product) {
         const p = json.product;
+        const cat = CATEGORIES.includes(p.category) ? p.category : "Other";
+        const aiTax = typeof p.taxRate === "number" ? p.taxRate : CATEGORY_TAX[cat] ?? TAX_RATE_DEFAULT;
         setForm((f) => ({
           ...f,
           name: p.name || f.name,
           brand: p.brand || f.brand,
-          category: CATEGORIES.includes(p.category) ? p.category : "Other",
+          category: cat,
           price: p.estimatedRetailPrice ? String(p.estimatedRetailPrice) : f.price,
+          taxRate: aiTax,
         }));
-        toast.success(`AI priced: $${p.estimatedRetailPrice} — ${p.description ?? ""}`);
+        toast.success(`AI priced: $${p.estimatedRetailPrice} · tax ${aiTax}% — ${p.description ?? ""}`);
       } else {
         toast.error(json.error ?? "Lookup failed");
       }
@@ -118,12 +134,14 @@ export default function POSDashboard() {
       description?: string;
     }) => {
       setShowCamera(false);
+      const cat = CATEGORIES.includes(result.category) ? result.category : "Other";
       setForm((f) => ({
         ...f,
         name: result.name || f.name,
         brand: result.brand || f.brand,
-        category: CATEGORIES.includes(result.category) ? result.category : "Other",
+        category: cat,
         price: result.estimatedRetailPrice ? String(result.estimatedRetailPrice) : f.price,
+        taxRate: CATEGORY_TAX[cat] ?? TAX_RATE_DEFAULT,
       }));
       toast.success(`Identified: ${result.name} — $${result.estimatedRetailPrice}`);
     },
@@ -143,6 +161,7 @@ export default function POSDashboard() {
       category: form.category,
       price,
       barcode: form.barcode.trim(),
+      taxRate: form.taxRate,
     };
     setInventory((inv) => [product, ...inv]);
 
@@ -153,7 +172,7 @@ export default function POSDashboard() {
       return [...c, { ...product, qty }];
     });
 
-    setForm({ name: "", brand: "", category: "Food & Grocery", price: "", barcode: "", qty: "1" });
+    setForm({ name: "", brand: "", category: "Food & Grocery", price: "", barcode: "", qty: "1", taxRate: CATEGORY_TAX["Food & Grocery"] });
     toast.success(`Added: ${name}`);
     barcodeRef.current?.focus();
   }, [form]);
@@ -177,9 +196,10 @@ export default function POSDashboard() {
   }, []);
 
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const taxAmt = subtotal * (taxRate / 100);
+  const taxAmt = cart.reduce((sum, i) => sum + i.price * i.qty * (i.taxRate / 100), 0);
   const total = subtotal + taxAmt;
   const itemCount = cart.reduce((sum, i) => sum + i.qty, 0);
+  const effectiveTaxRate = subtotal > 0 ? Math.round((taxAmt / subtotal) * 1000) / 10 : 0;
 
   const handleCheckout = useCallback(() => {
     if (cart.length === 0) { toast.error("Cart is empty"); return; }
@@ -219,7 +239,7 @@ export default function POSDashboard() {
           subtotal={subtotal}
           taxAmt={taxAmt}
           total={total}
-          taxRate={taxRate}
+          taxRate={effectiveTaxRate}
           merchantWallet={publicKey}
           onSuccess={handleSolanaSuccess}
           onCancel={() => setShowSolanaCheckout(false)}
@@ -293,13 +313,31 @@ export default function POSDashboard() {
                 <label className="block text-xs text-gray-500 mb-1">Category</label>
                 <select
                   value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                  onChange={(e) => {
+                    const cat = e.target.value;
+                    setForm((f) => ({ ...f, category: cat, taxRate: CATEGORY_TAX[cat] ?? TAX_RATE_DEFAULT }));
+                  }}
                   className="w-full px-3 py-2.5 rounded-lg bg-[rgb(31,41,55)] border border-[rgb(55,65,81)] text-white text-sm focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                  Tax Rate (%) <span className="text-amber-500">✨ AI-set</span>
+                </label>
+                <input
+                  value={form.taxRate}
+                  onChange={(e) => setForm((f) => ({ ...f, taxRate: parseFloat(e.target.value) || 0 }))}
+                  type="number"
+                  min="0"
+                  max="30"
+                  step="0.1"
+                  className="w-full px-3 py-2.5 rounded-lg bg-[rgb(31,41,55)] border border-amber-500/40 text-white text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -412,6 +450,7 @@ export default function POSDashboard() {
                         <p className="text-sm font-medium text-white truncate">{item.name}</p>
                         <div className="mt-0.5 flex items-center gap-1.5">
                           <CategoryBadge cat={item.category} />
+                          <span className="text-xs text-amber-500/80">tax {item.taxRate}%</span>
                           {item.barcode && (
                             <span className="text-xs text-gray-600 font-mono">{item.barcode}</span>
                           )}
@@ -459,29 +498,15 @@ export default function POSDashboard() {
           </div>
 
           <div className="card-retail rounded-2xl p-5 space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <label className="text-gray-400 font-medium">Tax Rate</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                  min={0}
-                  max={30}
-                  step={0.1}
-                  className="w-16 px-2 py-1 rounded-md bg-[rgb(31,41,55)] border border-[rgb(55,65,81)] text-white text-sm text-right focus:outline-none focus:border-blue-500"
-                />
-                <span className="text-gray-500 text-sm">%</span>
-              </div>
-            </div>
-
-            <div className="border-t border-[rgb(31,41,55)] pt-3 space-y-2">
+            <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Subtotal ({itemCount} item{itemCount !== 1 ? "s" : ""})</span>
                 <span className="text-white font-medium">${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Tax ({taxRate}%)</span>
+                <span className="text-gray-400 flex items-center gap-1">
+                  Tax <span className="text-amber-500 text-xs">(by category · {effectiveTaxRate}% avg)</span>
+                </span>
                 <span className="text-white font-medium">${taxAmt.toFixed(2)}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-[rgb(31,41,55)] text-lg font-bold">

@@ -11,6 +11,7 @@ import { truncateAddress } from "@/lib/utils";
 const NAV = [
   { href: "/dashboard", label: "POS", icon: "🛒" },
   { href: "/dashboard/history", label: "History", icon: "📋" },
+  { href: "/dashboard/account", label: "Account", icon: "💰" },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
 ];
 

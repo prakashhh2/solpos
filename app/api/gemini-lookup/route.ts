@@ -19,17 +19,19 @@ export async function POST(req: Request) {
           },
         },
         `You are a retail product identification AI.
-Identify the product in this image and provide its typical US retail price.
+Identify the product in this image and provide its typical US retail price and applicable sales tax rate.
 Respond ONLY with valid JSON (no markdown, no extra text):
 {
   "name": "product name",
   "brand": "brand name or empty string",
-  "category": "category (e.g. Food, Electronics, Clothing)",
+  "category": "one of: Food & Grocery, Electronics, Clothing, Health & Beauty, Home & Garden, Toys & Games, Sports, Other",
   "estimatedRetailPrice": 9.99,
+  "taxRate": 8,
   "currency": "USD",
   "confidence": "high|medium|low",
   "description": "one-line description"
-}`,
+}
+taxRate rules: Food & Grocery = 0, Electronics = 8, Clothing = 5, Health & Beauty = 6, Home & Garden = 7, Toys & Games = 7, Sports = 7, Other = 8`,
       ]);
 
       const text = result.response.text().trim();
@@ -48,12 +50,14 @@ Respond ONLY with valid JSON (no markdown, no extra text):
 {
   "name": "product name",
   "brand": "brand name or empty string",
-  "category": "category (e.g. Food, Electronics, Clothing)",
+  "category": "one of: Food & Grocery, Electronics, Clothing, Health & Beauty, Home & Garden, Toys & Games, Sports, Other",
   "estimatedRetailPrice": 9.99,
+  "taxRate": 8,
   "currency": "USD",
   "priceRange": { "min": 8.99, "max": 11.99 },
   "description": "one-line description"
-}`
+}
+taxRate rules: Food & Grocery = 0, Electronics = 8, Clothing = 5, Health & Beauty = 6, Home & Garden = 7, Toys & Games = 7, Sports = 7, Other = 8`
       );
 
       const text = result.response.text().trim();
