@@ -2,8 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Design tokens ─────────────────────────────────────── */
 @layer base {
   :root {
+    /* Light mode (default) */
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
+    --secondary: 241 245 249;
+    --secondary-foreground: 71 85 105;
+    --muted: 241 245 249;
+    --muted-foreground: 100 116 139;
+    --accent: 245 158 11;
+    --accent-foreground: 15 23 42;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --success: 16 185 129;
+    --border: 226 232 240;
+    --input: 241 245 249;
+    --ring: 59 130 246;
+    --radius: 0.5rem;
+
+    /* Structural color aliases */
+    --c-page:    248 250 252;
+    --c-surface: 255 255 255;
+    --c-raised:  241 245 249;
+    --c-hover:   226 232 240;
+    --c-border:  226 232 240;
+    --c-text-1:  15 23 42;
+    --c-text-2:  71 85 105;
+    --c-text-3:  100 116 139;
+    --c-text-4:  148 163 184;
+  }
+
+  html.dark {
     --background: 11 17 32;
     --foreground: 241 245 249;
     --card: 17 24 39;
@@ -24,7 +61,16 @@
     --border: 31 41 55;
     --input: 31 41 55;
     --ring: 59 130 246;
-    --radius: 0.5rem;
+
+    --c-page:    11 17 32;
+    --c-surface: 17 24 39;
+    --c-raised:  31 41 55;
+    --c-hover:   55 65 81;
+    --c-border:  31 41 55;
+    --c-text-1:  241 245 249;
+    --c-text-2:  156 163 175;
+    --c-text-3:  107 114 128;
+    --c-text-4:  75 85 99;
   }
 
   * {
@@ -32,63 +78,118 @@
   }
 
   body {
-    @apply bg-[rgb(11,17,32)] text-[rgb(241,245,249)] antialiased;
+    background-color: rgb(var(--c-page));
+    color: rgb(var(--c-text-1));
+    @apply antialiased;
     font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
   }
 }
 
+/* ─── Shared utilities ───────────────────────────────────── */
 @layer utilities {
   .glass {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  html.dark .glass {
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.07);
   }
+
   .card-retail {
-    background: rgb(17, 24, 39);
-    border: 1px solid rgb(31, 41, 55);
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-border));
   }
-  .glow-blue {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-  }
-  .glow-amber {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
-  }
-  .glow-green {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
-  }
+
+  .glow-blue  { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+  .glow-amber { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+  .glow-green { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+
   .text-gradient-retail {
     background: linear-gradient(135deg, #3B82F6, #06B6D4);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .scanner-line {
-    animation: scan 2s ease-in-out infinite;
-  }
+
+  .scanner-line { animation: scan 2s ease-in-out infinite; }
 }
 
+/* ─── Light-mode overrides for hardcoded dark Tailwind values ─── */
+/* These override the 4 rgb() bg values used inline across all pages */
+
+html:not(.dark) .bg-\[rgb\(11\,17\,32\)\]  { background-color: rgb(248 250 252) !important; }
+html:not(.dark) .bg-\[rgb\(17\,24\,39\)\]  { background-color: rgb(255 255 255) !important; }
+html:not(.dark) .bg-\[rgb\(31\,41\,55\)\]  { background-color: rgb(241 245 249) !important; }
+html:not(.dark) .bg-\[rgb\(55\,65\,81\)\]  { background-color: rgb(226 232 240) !important; }
+
+html:not(.dark) .hover\:bg-\[rgb\(31\,41\,55\)\]:hover  { background-color: rgb(241 245 249) !important; }
+html:not(.dark) .hover\:bg-\[rgb\(55\,65\,81\)\]:hover  { background-color: rgb(226 232 240) !important; }
+
+html:not(.dark) .bg-\[rgb\(31\,41\,55\)\]\/50 { background-color: rgba(241,245,249,0.5) !important; }
+
+html:not(.dark) .border-\[rgb\(31\,41\,55\)\] { border-color: rgb(226 232 240) !important; }
+html:not(.dark) .border-\[rgb\(55\,65\,81\)\] { border-color: rgb(203 213 225) !important; }
+html:not(.dark) .divide-\[rgb\(31\,41\,55\)\] > * + * { border-color: rgb(226 232 240) !important; }
+
+html:not(.dark) .border-white\/5  { border-color: rgba(0,0,0,0.05) !important; }
+html:not(.dark) .border-white\/8  { border-color: rgba(0,0,0,0.08) !important; }
+html:not(.dark) .border-white\/10 { border-color: rgba(0,0,0,0.10) !important; }
+
+html:not(.dark) .bg-white\/3 { background-color: rgba(0,0,0,0.02) !important; }
+html:not(.dark) .bg-white\/5 { background-color: rgba(0,0,0,0.03) !important; }
+html:not(.dark) .hover\:bg-white\/3:hover { background-color: rgba(0,0,0,0.03) !important; }
+html:not(.dark) .hover\:bg-white\/5:hover { background-color: rgba(0,0,0,0.04) !important; }
+
+html:not(.dark) .bg-zinc-900 { background-color: rgb(241 245 249) !important; }
+html:not(.dark) .bg-zinc-800 { background-color: rgb(226 232 240) !important; }
+html:not(.dark) .hover\:bg-zinc-700:hover { background-color: rgb(203 213 225) !important; }
+
+/* Text overrides */
+html:not(.dark) .text-white { color: rgb(15 23 42) !important; }
+html:not(.dark) .text-gray-300 { color: rgb(71 85 105) !important; }
+html:not(.dark) .text-gray-400 { color: rgb(100 116 139) !important; }
+html:not(.dark) .text-gray-500 { color: rgb(148 163 184) !important; }
+html:not(.dark) .text-gray-600 { color: rgb(148 163 184) !important; }
+html:not(.dark) .text-gray-700 { color: rgb(203 213 225) !important; }
+html:not(.dark) .text-zinc-200 { color: rgb(30 41 59) !important; }
+html:not(.dark) .text-zinc-300 { color: rgb(51 65 85) !important; }
+html:not(.dark) .text-zinc-400 { color: rgb(71 85 105) !important; }
+html:not(.dark) .text-zinc-500 { color: rgb(100 116 139) !important; }
+html:not(.dark) .text-zinc-600 { color: rgb(100 116 139) !important; }
+html:not(.dark) .text-zinc-700 { color: rgb(148 163 184) !important; }
+
+/* Inputs in light mode get a visible border */
+html:not(.dark) input, html:not(.dark) select, html:not(.dark) textarea {
+  color: rgb(15 23 42);
+}
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder { color: rgb(148 163 184); }
+
+/* ─── Animations ─────────────────────────────────────────── */
 @keyframes fade-in {
-  0% { opacity: 0; transform: translateY(8px); }
+  0%   { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 @keyframes scale-in {
-  0% { transform: scale(0.96); opacity: 0; }
+  0%   { transform: scale(0.96); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
 @keyframes slide-in-right {
-  0% { transform: translateX(16px); opacity: 0; }
+  0%   { transform: translateX(16px); opacity: 0; }
   100% { transform: translateX(0); opacity: 1; }
 }
 @keyframes scan {
   0%, 100% { top: 0%; opacity: 1; }
-  50% { top: 90%; opacity: 0.6; }
+  50%       { top: 90%; opacity: 0.6; }
 }
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  50%       { opacity: 0.4; }
 }
 
-.animate-fade-in { animation: fade-in 0.25s ease-out forwards; }
-.animate-scale-in { animation: scale-in 0.2s ease-out forwards; }
+.animate-fade-in       { animation: fade-in 0.25s ease-out forwards; }
+.animate-scale-in      { animation: scale-in 0.2s ease-out forwards; }
 .animate-slide-in-right { animation: slide-in-right 0.2s ease-out forwards; }
-.animate-pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+.animate-pulse-dot     { animation: pulse-dot 1.4s ease-in-out infinite; }

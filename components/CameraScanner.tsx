@@ -91,7 +91,6 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[rgb(31,41,55)]">
           <div className="flex items-center gap-2">
-            <span className="text-lg">📷</span>
             <span className="font-semibold text-white">Camera Scanner</span>
             {camReady && (
               <span className="flex items-center gap-1 text-xs text-emerald-400">
@@ -177,7 +176,7 @@ export function CameraScanner({ onResult, onClose }: CameraScannerProps) {
                 Identifying…
               </>
             ) : (
-              <>📸 Capture & Identify</>
+              <>Capture & Identify</>
             )}
           </button>
           <button

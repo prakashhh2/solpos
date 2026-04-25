@@ -6,6 +6,8 @@ import { PaymentState } from "@/lib/types";
 import { formatUSD } from "@/lib/utils";
 import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
+import { SOLANA_NETWORK } from "@/lib/constants";
+import { DEMO_SOL_AMOUNT } from "@/lib/solanaPay";
 
 interface QRDisplayProps {
   url: string;
@@ -137,6 +139,19 @@ export function QRDisplay({
         </div>
         <p className="text-xs text-zinc-600">Scan with Phantom or Solflare</p>
       </div>
+
+      {/* Devnet demo notice */}
+      {SOLANA_NETWORK !== "mainnet-beta" && (
+        <div className="w-full max-w-xs rounded-xl border border-blue-500/25 bg-blue-500/8 px-4 py-3 space-y-1">
+          <p className="text-xs font-semibold text-blue-300">Devnet demo mode</p>
+          <p className="text-xs text-blue-300/80 leading-relaxed">
+            Your wallet will ask you to send{" "}
+            <span className="font-semibold">{DEMO_SOL_AMOUNT.toFixed(3)} SOL</span>
+            {" "}— a tiny symbolic amount. The POS records it as the full USDC
+            payment. No devnet USDC required.
+          </p>
+        </div>
+      )}
 
       {/* Cancel */}
       <button

@@ -7,6 +7,7 @@ import { CameraScanner } from "@/components/CameraScanner";
 import { SolanaCheckout } from "@/components/SolanaCheckout";
 import { useTransactionContext } from "@/context/TransactionContext";
 import { Transaction } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -23,6 +24,11 @@ interface CartItem extends Product {
 }
 
 const TAX_RATE_DEFAULT = 1;
+
+// Card processor fee model (Stripe / Square standard)
+const CARD_RATE = 0.029;   // 2.9 %
+const CARD_FIXED = 0.30;   // $0.30 per transaction
+const SOLANA_FEE = 0.00025; // ~$0.00025 per tx on Solana
 
 // US-style category tax rates (%) — overridden by Gemini when AI lookup is used
 const CATEGORY_TAX: Record<string, number> = {
@@ -201,6 +207,12 @@ export default function POSDashboard() {
   const itemCount = cart.reduce((sum, i) => sum + i.qty, 0);
   const effectiveTaxRate = subtotal > 0 ? Math.round((taxAmt / subtotal) * 1000) / 10 : 0;
 
+  const cardFee = total > 0 ? total * CARD_RATE + CARD_FIXED : 0;
+  const cardFeePercent = total > 0 ? (cardFee / total) * 100 : 0;
+  const cardNetAmount = total - cardFee;
+  const solanaSavings = total > 0 ? cardFee - SOLANA_FEE : 0;
+  const isSmallAmount = total > 0 && total < 5;
+
   const handleCheckout = useCallback(() => {
     if (cart.length === 0) { toast.error("Cart is empty"); return; }
     if (!connected || !publicKey) { toast.error("Connect your wallet first to accept Solana Pay"); return; }
@@ -252,7 +264,6 @@ export default function POSDashboard() {
         <div className="flex flex-col gap-4">
           <div className="card-retail rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-lg">📦</span>
               <h2 className="text-base font-semibold text-white">Add Product</h2>
             </div>
 
@@ -261,7 +272,7 @@ export default function POSDashboard() {
                 onClick={() => setShowCamera(true)}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-600/30 text-blue-400 text-sm font-medium transition-colors"
               >
-                📷 Scan Camera
+                Scan Camera
               </button>
               <button
                 onClick={handleAILookup}
@@ -271,7 +282,7 @@ export default function POSDashboard() {
                 {lookingUp ? (
                   <><div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />Pricing…</>
                 ) : (
-                  <>✨ AI Price</>
+                  <>AI Price</>
                 )}
               </button>
             </div>
@@ -327,7 +338,7 @@ export default function POSDashboard() {
 
               <div>
                 <label className="flex items-center gap-1 text-xs text-gray-500 mb-1">
-                  Tax Rate (%) <span className="text-amber-500">✨ AI-set</span>
+                  Tax Rate (%) <span className="text-amber-500">AI-set</span>
                 </label>
                 <input
                   value={form.taxRate}
@@ -405,7 +416,6 @@ export default function POSDashboard() {
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-lg">🛒</span>
               <h2 className="text-base font-semibold text-white">Current Sale</h2>
               {itemCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-xs font-bold">
@@ -426,7 +436,6 @@ export default function POSDashboard() {
           <div className="card-retail rounded-2xl flex-1 overflow-hidden">
             {cart.length === 0 ? (
               <div className="min-h-[220px] flex flex-col items-center justify-center text-gray-600 gap-3">
-                <span className="text-4xl opacity-40">🛒</span>
                 <p className="text-sm">No items yet</p>
                 <p className="text-xs text-gray-700">Add products using the form on the left</p>
               </div>
@@ -517,7 +526,43 @@ export default function POSDashboard() {
 
             {!connected && cart.length > 0 && (
               <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-400">
-                ⚠ Connect your wallet (top-right) to accept Solana Pay
+                Connect your wallet (top-right) to accept Solana Pay
+              </div>
+            )}
+
+            {/* Card loss warning for small amounts */}
+            {isSmallAmount && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/8 overflow-hidden animate-fade-in">
+                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/15 border-b border-red-500/20">
+                  <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">!</span>
+                  <p className="text-xs font-bold text-red-400 uppercase tracking-wide">Card fee warning</p>
+                </div>
+                <div className="px-4 py-3 space-y-2">
+                  <p className="text-sm text-red-300 leading-snug">
+                    Paying by card on a small sale means the card company takes a{" "}
+                    <span className="font-bold text-red-200">big cut</span> of your money.
+                  </p>
+                  <div className="flex items-center justify-between rounded-lg bg-black/20 px-3 py-2">
+                    <div className="text-center">
+                      <p className="text-[10px] text-red-500 uppercase tracking-wider">Sale total</p>
+                      <p className="text-base font-bold text-white">${total.toFixed(2)}</p>
+                    </div>
+                    <div className="text-red-500 font-bold text-lg">−</div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-red-500 uppercase tracking-wider">Card fee</p>
+                      <p className="text-base font-bold text-red-400">${cardFee.toFixed(2)}</p>
+                      <p className="text-[10px] text-red-600">{cardFeePercent.toFixed(1)}% of sale</p>
+                    </div>
+                    <div className="text-zinc-400 font-bold text-lg">=</div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-red-500 uppercase tracking-wider">You keep</p>
+                      <p className="text-base font-bold text-red-300">${cardNetAmount.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-emerald-400 font-medium">
+                    Use Solana Pay instead — you keep the full ${total.toFixed(2)}.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -527,6 +572,11 @@ export default function POSDashboard() {
               className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-base transition-colors flex items-center justify-center gap-2 glow-blue"
             >
               ◎ Pay with Solana — ${total.toFixed(2)}
+              {total > 0 && (
+                <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-normal">
+                  save ${solanaSavings.toFixed(2)}
+                </span>
+              )}
             </button>
 
             {cart.length > 0 && (
@@ -548,7 +598,7 @@ export default function POSDashboard() {
                   }}
                   className="py-2.5 rounded-xl border border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500 text-sm font-medium transition-colors"
                 >
-                  💵 Cash
+                  Cash
                 </button>
                 <button
                   onClick={() => {
@@ -565,9 +615,17 @@ export default function POSDashboard() {
                     setCart([]);
                     toast.success("Card payment recorded.");
                   }}
-                  className="py-2.5 rounded-xl border border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500 text-sm font-medium transition-colors"
+                  className={cn(
+                    "py-2.5 rounded-xl border text-sm font-medium transition-colors flex flex-col items-center gap-0.5",
+                    isSmallAmount
+                      ? "border-red-500/40 text-red-400 hover:border-red-400/60 hover:text-red-300"
+                      : "border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500"
+                  )}
                 >
-                  💳 Card
+                  <span>Card</span>
+                  {isSmallAmount && (
+                    <span className="text-xs font-normal opacity-80">−${cardFee.toFixed(2)} fee</span>
+                  )}
                 </button>
               </div>
             )}

@@ -12,6 +12,7 @@ interface UsePaymentStatusOptions {
   recipient: PublicKey | null;
   amount: number;
   enabled: boolean;
+  nativeSOL?: boolean;
 }
 
 export function usePaymentStatus({
@@ -19,6 +20,7 @@ export function usePaymentStatus({
   recipient,
   amount,
   enabled,
+  nativeSOL = false,
 }: UsePaymentStatusOptions) {
   const [state, setState] = useState<PaymentState>({
     status: "idle",
@@ -49,7 +51,8 @@ export function usePaymentStatus({
           connection,
           signature,
           recipient,
-          new BigNumber(amount.toFixed(6))
+          new BigNumber(amount.toFixed(6)),
+          nativeSOL
         );
         if (abortRef.current) return;
 
@@ -64,7 +67,7 @@ export function usePaymentStatus({
     return () => {
       abortRef.current = true;
     };
-  }, [enabled, reference, recipient, amount]);
+  }, [enabled, reference, recipient, amount, nativeSOL]);
 
   return { ...state, reset };
 }

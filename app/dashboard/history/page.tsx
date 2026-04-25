@@ -7,13 +7,14 @@ import { AnalyticsResult } from "@/app/api/analytics/route";
 import { formatUSD, timeAgo, explorerTxUrl, truncateAddress, downloadCSV } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { RefundModal } from "@/components/RefundModal";
 
 type FilterRange = "all" | "today" | "week" | "month";
 
 const PAYMENT_ICON: Record<string, string> = {
   solana: "◎",
-  card: "💳",
-  cash: "💵",
+  card: "",
+  cash: "",
 };
 
 const PAYMENT_COLOR: Record<string, string> = {
@@ -27,6 +28,7 @@ export default function HistoryPage() {
   const [filter, setFilter] = useState<FilterRange>("all");
   const [analytics, setAnalytics] = useState<AnalyticsResult | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [refundTx, setRefundTx] = useState<Transaction | null>(null);
 
   const filtered = useMemo(() => {
     const now = Date.now();
@@ -91,6 +93,9 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {refundTx && (
+        <RefundModal tx={refundTx} onClose={() => setRefundTx(null)} />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -108,7 +113,7 @@ export default function HistoryPage() {
             {loadingAI ? (
               <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Analyzing…</>
             ) : (
-              <>✨ AI Insights</>
+              <>AI Insights</>
             )}
           </button>
           <button
@@ -144,7 +149,6 @@ export default function HistoryPage() {
       {analytics && (
         <div className="glass rounded-2xl p-6 space-y-6 border border-[#9945FF]/30">
           <div className="flex items-center gap-2">
-            <span className="text-xl">✨</span>
             <h2 className="text-lg font-bold text-white">AI Sales Insights</h2>
           </div>
 
@@ -153,7 +157,7 @@ export default function HistoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Best Products */}
             <div className="bg-white/5 rounded-xl p-4 space-y-3">
-              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">📦 Best Products</p>
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Best Products</p>
               {analytics.bestProducts.map((p, i) => (
                 <div key={i} className="flex items-center justify-between gap-2">
                   <span className="text-sm text-white truncate">{p.name}</span>
@@ -167,7 +171,7 @@ export default function HistoryPage() {
 
             {/* Rush Hours */}
             <div className="bg-white/5 rounded-xl p-4 space-y-3">
-              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">⏰ Rush Hours</p>
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Rush Hours</p>
               {analytics.rushHours.length > 0 ? (
                 analytics.rushHours.map((h, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -185,7 +189,7 @@ export default function HistoryPage() {
 
             {/* Payment Breakdown */}
             <div className="bg-white/5 rounded-xl p-4 space-y-3">
-              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">💳 Payment Methods</p>
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Payment Methods</p>
               {analytics.paymentBreakdown.map((p, i) => (
                 <div key={i} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
@@ -206,10 +210,10 @@ export default function HistoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {analytics.lowStockAlerts && analytics.lowStockAlerts.length > 0 && (
               <div className="bg-white/5 rounded-xl p-4 space-y-3">
-                <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">📦 Restock Alerts</p>
+                <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Restock Alerts</p>
                 {analytics.lowStockAlerts.map((a, i) => (
                   <div key={i} className="flex items-start gap-2.5">
-                    <span className="mt-0.5 text-orange-400 text-sm shrink-0">⚠</span>
+                    <span className="mt-0.5 text-orange-400 text-sm shrink-0">!</span>
                     <div>
                       <p className="text-sm text-white font-medium">{a.name}</p>
                       <p className="text-xs text-zinc-400">{a.totalSold} sold · {a.alert}</p>
@@ -221,7 +225,7 @@ export default function HistoryPage() {
 
             {analytics.topCombos && analytics.topCombos.length > 0 && (
               <div className="bg-white/5 rounded-xl p-4 space-y-3">
-                <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">🤝 Top Combos</p>
+                <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">Top Combos</p>
                 {analytics.topCombos.map((c, i) => (
                   <div key={i} className="space-y-0.5">
                     <p className="text-sm text-white font-medium">{c.items.join(" + ")}</p>
@@ -234,7 +238,7 @@ export default function HistoryPage() {
 
           {/* Suggestions */}
           <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium mb-3">🚀 Action Plan</p>
+            <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium mb-3">Action Plan</p>
             {analytics.suggestions.map((s, i) => (
               <div key={i} className="flex items-start gap-2.5">
                 <span className="mt-0.5 w-5 h-5 rounded-full bg-[#9945FF]/20 text-[#9945FF] text-xs flex items-center justify-center shrink-0 font-bold">
@@ -251,7 +255,6 @@ export default function HistoryPage() {
       <div className="glass rounded-2xl overflow-hidden">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
-            <span className="text-4xl mb-3">📭</span>
             <p className="text-sm">No transactions in this period</p>
           </div>
         ) : (
@@ -259,7 +262,7 @@ export default function HistoryPage() {
             <table className="w-full text-sm" aria-label="Transaction history">
               <thead className="border-b border-white/8">
                 <tr>
-                  {["Product(s)", "Payment", "Amount", "Signature", "Date & Time", "Status", "Explorer"].map(
+                  {["Product(s)", "Payment", "Amount", "Signature", "Date & Time", "Status", "Explorer", "Action"].map(
                     (h) => (
                       <th
                         key={h}
@@ -273,7 +276,7 @@ export default function HistoryPage() {
               </thead>
               <tbody>
                 {filtered.map((tx) => (
-                  <HistoryRow key={tx.id} tx={tx} />
+                  <HistoryRow key={tx.id} tx={tx} onRefund={() => setRefundTx(tx)} />
                 ))}
               </tbody>
             </table>
@@ -284,7 +287,7 @@ export default function HistoryPage() {
   );
 }
 
-function HistoryRow({ tx }: { tx: Transaction }) {
+function HistoryRow({ tx, onRefund }: { tx: Transaction; onRefund: () => void }) {
   const itemLabel = tx.items && tx.items.length > 0
     ? tx.items.map((i) => (i.qty > 1 ? `${i.qty}× ${i.name}` : i.name)).join(", ")
     : "—";
@@ -329,15 +332,36 @@ function HistoryRow({ tx }: { tx: Transaction }) {
           <span className="text-zinc-700 text-xs">—</span>
         )}
       </td>
+      <td className="px-5 py-3">
+        {tx.status === "confirmed" ? (
+          <button
+            onClick={onRefund}
+            className="px-3 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 hover:text-red-300 text-xs font-medium transition-colors"
+          >
+            Refund
+          </button>
+        ) : tx.status === "refunded" ? (
+          <span className="text-xs text-zinc-600 italic">Refunded</span>
+        ) : (
+          <span className="text-zinc-700 text-xs">—</span>
+        )}
+      </td>
     </tr>
   );
 }
 
 function StatusBadge({ status }: { status: Transaction["status"] }) {
-  const styles = {
+  const styles: Record<Transaction["status"], string> = {
     confirmed: "bg-[#14F195]/15 text-[#14F195] border-[#14F195]/30",
     pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
     failed: "bg-red-500/15 text-red-400 border-red-500/30",
+    refunded: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+  };
+  const dots: Record<Transaction["status"], string> = {
+    confirmed: "bg-[#14F195]",
+    pending: "bg-yellow-400",
+    failed: "bg-red-400",
+    refunded: "bg-zinc-400",
   };
   return (
     <span
@@ -346,14 +370,7 @@ function StatusBadge({ status }: { status: Transaction["status"] }) {
         styles[status]
       )}
     >
-      <span
-        className={cn(
-          "w-1.5 h-1.5 rounded-full",
-          status === "confirmed" && "bg-[#14F195]",
-          status === "pending" && "bg-yellow-400",
-          status === "failed" && "bg-red-400"
-        )}
-      />
+      <span className={cn("w-1.5 h-1.5 rounded-full", dots[status])} />
       {status}
     </span>
   );

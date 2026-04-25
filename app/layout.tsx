@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SolanaProvider } from "@/components/WalletProvider";
 import { TransactionProvider } from "@/context/TransactionContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -24,25 +25,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="antialiased min-h-screen bg-[rgb(11,17,32)] text-white">
-        <SolanaProvider>
-          <TransactionProvider>
-            {children}
-            <Toaster
-              theme="dark"
-              position="bottom-right"
-              toastOptions={{
-                style: {
-                  background: "rgb(17,24,39)",
-                  border: "1px solid rgba(59,130,246,0.3)",
-                  color: "white",
-                  fontFamily: "var(--font-geist-sans)",
-                },
-              }}
-            />
-          </TransactionProvider>
-        </SolanaProvider>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      {/* Anti-flash: apply saved theme before React hydrates */}
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('pos-theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="antialiased min-h-screen">
+        <ThemeProvider>
+          <SolanaProvider>
+            <TransactionProvider>
+              {children}
+              <Toaster
+                position="bottom-right"
+                toastOptions={{
+                  className: "!font-sans",
+                  style: { fontFamily: "var(--font-geist-sans)" },
+                }}
+              />
+            </TransactionProvider>
+          </SolanaProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

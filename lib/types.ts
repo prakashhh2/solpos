@@ -1,4 +1,4 @@
-export type TransactionStatus = "pending" | "confirmed" | "failed";
+export type TransactionStatus = "pending" | "confirmed" | "failed" | "refunded";
 export type PaymentMethod = "solana" | "card" | "cash";
 
 export interface TransactionItem {
@@ -17,6 +17,8 @@ export interface Transaction {
   items?: TransactionItem[];
   payment_method?: PaymentMethod;
   splits?: SplitBreakdown;
+  refund_tx?: string;
+  refunded_at?: Date;
 }
 
 export interface SplitBreakdown {

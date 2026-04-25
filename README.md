@@ -1,40 +1,56 @@
-# ⚡ Solana POS — Accept USDC Payments Instantly
+# SolPOS — Solana Point-of-Sale for Small Merchants
 
-A production-grade, mobile-first Point-of-Sale terminal built on Solana Pay.  
-Merchants enter an amount, show a QR code, and the customer pays in USDC — confirmed in under 1 second.
+A mobile-first POS terminal that lets any merchant accept USDC payments instantly via Solana Pay. No card reader, no bank account, no middleman — just a QR code and a Solana wallet.
 
 ---
 
-## Architecture
+## The Problem: Card Fees Kill Small Sales
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                      BROWSER (Next.js 14)                    │
-│                                                              │
-│  ┌────────────┐   ┌──────────────┐   ┌───────────────────┐  │
-│  │  Landing   │──▶│  Dashboard   │──▶│  Charge / QR Page │  │
-│  │  (/)       │   │  (/dashboard)│   │  (/charge)        │  │
-│  └────────────┘   └──────────────┘   └─────────┬─────────┘  │
-│                                                 │            │
-│  ┌──────────────────────────────────────────────┼──────────┐ │
-│  │  Solana Wallet Adapter (Phantom / Solflare)  │          │ │
-│  └──────────────────────────────────────────────┘          │ │
-│                                                             │ │
-│  ┌────────────────────────┐   ┌────────────────────────┐   │ │
-│  │  TransactionContext    │   │  usePaymentStatus hook │   │ │
-│  │  (in-memory store)     │   │  (polls Solana RPC)    │   │ │
-│  └────────────────────────┘   └────────────────────────┘   │ │
-└──────────────────────────────────────────────────────────────┘
-                         │ @solana/pay
-                         ▼
-┌──────────────────────────────────────────────────────────────┐
-│                   SOLANA DEVNET / MAINNET                    │
-│                                                              │
-│   encodeURL() → QR Code                                      │
-│   findReference() → detect tx                               │
-│   validateTransfer() → confirm amount + recipient            │
-└──────────────────────────────────────────────────────────────┘
-```
+Every time a customer pays with a card, the payment processor (Stripe, Square, etc.) takes a cut:
+
+**Stripe fee: 2.9% + $0.30 per transaction**
+
+| Sale Amount | Card Fee | You Keep | Fee % |
+|-------------|----------|----------|-------|
+| $1.00       | $0.33    | $0.67    | 33%   |
+| $2.50       | $0.37    | $2.13    | 15%   |
+| $5.00       | $0.45    | $4.55    | 9%    |
+| $20.00      | $0.88    | $19.12   | 4.4%  |
+
+For a coffee shop, street vendor, or food stall doing dozens of small sales a day, this adds up fast. A $1.50 tip jar? The processor keeps 22 cents — nearly 15%.
+
+**Solana Pay fee: ~$0.00025 flat — always**
+
+| Sale Amount | Solana Fee | You Keep | Fee % |
+|-------------|------------|----------|-------|
+| $1.00       | $0.00025   | $0.9998  | 0.025%|
+| $2.50       | $0.00025   | $2.4998  | 0.01% |
+| $5.00       | $0.00025   | $4.9998  | 0.005%|
+| $20.00      | $0.00025   | $19.9998 | 0.001%|
+
+SolPOS makes Solana Pay accessible to any merchant — no technical knowledge required.
+
+---
+
+## What SolPOS Does
+
+**Accept payments** — Cashier enters an amount, a QR code appears. Customer scans with Phantom or Solflare. Payment confirms in under 1 second.
+
+**Cart builder** — Add products by name (with AI lookup via Gemini), build a full order, tap Charge. Items are recorded on each transaction for analytics.
+
+**Checkout screen** — Real-time fee comparison shows the cashier exactly how much they lose to card fees vs. keeping it all with Solana Pay.
+
+**Auto-split payments** — Toggle on revenue splitting: 80% owner, 10% employee tip, 10% tax. Breakdown shows on the confirmation screen.
+
+**Transaction history** — Full log of every payment with status, method, items, and Solana Explorer links. Filter by date, export to CSV.
+
+**Refunds** — Issue on-chain USDC refunds to a customer wallet, or record manual refunds for cash/card. Refunded transactions are marked in the history.
+
+**Account page** — Shows your USDC balance prominently (the currency you're earning), with SOL balance secondary (used only for network fees). Withdraw USDC to any wallet.
+
+**Daily report** — One click generates a Gemini AI analysis of the day: performance score, revenue narrative, top products, payment method breakdown, hourly revenue chart, what went well, and a concrete action plan for tomorrow.
+
+**Demo mode** — On devnet, the QR requests 0.001 SOL instead of USDC (wallets always recognise SOL — no "unknown token" warning). The POS records the full USD amount as if it were USDC. Lets you demo the full flow without devnet USDC.
 
 ---
 
@@ -49,13 +65,16 @@ npm install
 
 ### 2. Configure environment
 
-`.env.local` is pre-configured for devnet. No changes needed for local testing:
+Create `.env.local`:
 
 ```env
 NEXT_PUBLIC_SOLANA_NETWORK=devnet
 NEXT_PUBLIC_RPC_ENDPOINT=https://api.devnet.solana.com
 NEXT_PUBLIC_USDC_MINT=4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
+
+Get a free Gemini API key at [Google AI Studio](https://aistudio.google.com).
 
 ### 3. Run the dev server
 
@@ -67,9 +86,20 @@ Open http://localhost:3000
 
 ---
 
-## How to Get Devnet SOL and USDC
+## Full Payment Flow (Devnet Demo)
 
-### Get Devnet SOL (for transaction fees)
+1. Connect a Phantom wallet (your merchant wallet)
+2. Click **New Sale** on the dashboard
+3. Enter an amount (e.g. `$4.99`) — notice the card fee warning showing you'd lose $0.44
+4. Click **Charge** — a QR code appears
+5. Scan with Phantom mobile on devnet, approve a tiny 0.001 SOL transfer
+6. Watch the POS confirm with confetti — transaction recorded as $4.99 USDC
+
+No devnet USDC required. The SOL transfer is symbolic; the POS tracks the full dollar amount.
+
+---
+
+## Get Devnet SOL (for network fees)
 
 ```bash
 solana airdrop 2 <YOUR_WALLET_ADDRESS> --url devnet
@@ -77,109 +107,49 @@ solana airdrop 2 <YOUR_WALLET_ADDRESS> --url devnet
 
 Or use the web faucet: https://faucet.solana.com
 
-### Get Devnet USDC
-
-Use the SPL Token Faucet:
-```
-https://spl-token-faucet.com/?token-name=USDC-Dev
-```
-
-Mint address: `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`
-
----
-
-## Full Payment Flow Test
-
-1. Connect two Phantom wallets (merchant + customer)
-2. Fund **customer wallet** with 10+ devnet USDC
-3. Open the app, connect **merchant wallet**
-4. Click **New Sale**, enter `$5.00`, click **Charge**
-5. Scan the QR code with the customer's Phantom mobile app
-6. Approve the transaction — watch POS confirm in ~800ms with confetti
-
----
-
-## Demo Script (90 Seconds)
-
-```
-0:00  Open localhost:3000
-      "Solana POS — a Web3 point-of-sale terminal."
-
-0:05  Connect Phantom wallet
-      "Merchant wallet connected instantly."
-
-0:15  Dashboard shows seeded transaction history
-      "Today's revenue, total transactions, average sale — all on-chain."
-
-0:25  Click "New Sale" → type $24.99
-      "Any dollar amount via the keypad."
-
-0:35  Toggle "Auto-Split" ON
-      "80% owner, 10% employee tip, 10% tax — automatic revenue split."
-
-0:40  Click "Charge $24.99" → QR code appears
-      "Customer scans with Phantom or Solflare."
-
-0:50  Complete payment on second device
-      Confetti fires, split breakdown shown
-      "Confirmed in under 1 second. Zero intermediaries."
-
-1:05  Dashboard updates — new transaction at top
-      "Live transaction feed with Solana Explorer links."
-
-1:15  Open History → Export CSV
-      "Full audit trail, one-click CSV export."
-
-1:25  "Next.js 14 + @solana/pay. Open source. Production-ready."
-```
-
----
-
-## Known Issues
-
-- **RPC rate limits**: Public devnet is throttled. Use Helius/QuickNode for demos.
-- **SSR + wallet adapter**: `WalletProvider` must be `"use client"`. Do not import in Server Components.
-- **Demo mode**: Enable in Settings → Demo Mode to bypass real Solana calls (great for stage demos with bad WiFi).
-- **USDC decimals**: Devnet USDC = 6 decimal places. `validateTransfer` handles the conversion.
-
 ---
 
 ## Project Structure
 
 ```
 app/
-  layout.tsx              Root layout — providers + Toaster
-  page.tsx                Landing / wallet connect
+  page.tsx                  Landing / wallet connect
   dashboard/
-    layout.tsx            Nav shell + auth guard
-    page.tsx              Dashboard with stats + feed
-    charge/page.tsx       Keypad → QR → confetti success
-    history/page.tsx      Full history + date filter + CSV
-    settings/page.tsx     Wallet, network, split config
+    layout.tsx              Top nav + mobile bottom nav
+    page.tsx                Dashboard: stats, transaction feed, cart
+    charge/page.tsx         Keypad only (standalone charge)
+    history/page.tsx        Full history, date filter, CSV export, refunds
+    report/page.tsx         Gemini AI daily report
+    account/page.tsx        USDC balance, SOL balance, withdraw
+    settings/page.tsx       Demo mode, split config, network info
   api/
-    create-payment/       POST: generate Solana Pay URL
-    verify-payment/       POST: verify on-chain transfer
+    daily-report/route.ts   POST: Gemini AI end-of-day analysis
+    lookup-product/route.ts POST: Gemini AI product name lookup
+    analytics/route.ts      POST: Gemini AI sales analytics
 
 components/
-  WalletProvider.tsx      Phantom + Solflare adapter setup
-  Keypad.tsx              Numeric keypad
-  QRDisplay.tsx           QR code + payment state + confetti
-  StatsCards.tsx          Revenue / transactions / average
-  TransactionFeed.tsx     Transaction table
+  Keypad.tsx                Numeric keypad with cart builder
+  QRDisplay.tsx             QR code + payment state machine + confetti
+  SolanaCheckout.tsx        Cart checkout with fee comparison
+  RefundModal.tsx           On-chain USDC refund or record-only
+  TransactionFeed.tsx       Transaction table with status badges
+  StatsCards.tsx            Revenue / transactions / average stats
+  CameraScanner.tsx         Camera-based product scanner
 
 context/
-  TransactionContext.tsx  In-memory store + computed stats
+  TransactionContext.tsx    In-memory + localStorage transaction store
+  ThemeContext.tsx          Light/dark theme
 
 hooks/
-  usePaymentStatus.ts     findReference + validateTransfer loop
-  useTransactions.ts      TransactionContext wrapper
+  usePaymentStatus.ts       Polls Solana RPC for payment confirmation
+  useTransactions.ts        TransactionContext wrapper
 
 lib/
-  constants.ts            USDC mint, network, poll intervals
-  solana.ts               Connection singleton
-  solanaPay.ts            Payment request + polling helpers
-  types.ts                TypeScript interfaces
-  seedData.ts             10 demo transactions for dashboard
+  constants.ts              USDC mint, network, fee config
+  solanaPay.ts              Payment requests, polling, confirmation
+  types.ts                  TypeScript interfaces
+  utils.ts                  formatUSD, truncateAddress, cn
+  seedData.ts               Demo transactions for first load
 ```
 
 ---
@@ -189,10 +159,19 @@ lib/
 | Layer | Technology |
 |-------|-----------|
 | Framework | Next.js 14 (App Router) |
-| Styling | Tailwind CSS + shadcn/ui |
-| Solana | @solana/web3.js + @solana/pay + @solana/spl-token |
+| Styling | Tailwind CSS |
+| Solana | @solana/web3.js, @solana/pay, @solana/spl-token |
 | Wallets | Phantom, Solflare via @solana/wallet-adapter |
+| AI | Google Gemini (gemma-3-4b-it) via @google/generative-ai |
 | QR Code | qrcode.react |
 | Confetti | canvas-confetti |
 | Toasts | sonner |
 | Language | TypeScript strict mode |
+
+---
+
+## Known Issues
+
+- **RPC rate limits**: Public devnet RPC is throttled. For a live demo, use Helius or QuickNode.
+- **Demo mode devnet**: SOL transfer is symbolic — production mainnet uses real USDC. Switch `NEXT_PUBLIC_SOLANA_NETWORK=mainnet-beta` for production.
+- **SSR + wallet adapter**: `WalletProvider` must be `"use client"`. Do not import in Server Components.

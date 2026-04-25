@@ -19,7 +19,6 @@ export function TransactionFeed({
   if (visible.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-zinc-600">
-        <span className="text-4xl mb-3">📭</span>
         <p className="text-sm">No transactions yet</p>
       </div>
     );
@@ -90,10 +89,17 @@ export function TransactionFeed({
 }
 
 function StatusBadge({ status }: { status: Transaction["status"] }) {
-  const styles = {
+  const styles: Record<Transaction["status"], string> = {
     confirmed: "bg-[#14F195]/15 text-[#14F195] border-[#14F195]/30",
     pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
     failed: "bg-red-500/15 text-red-400 border-red-500/30",
+    refunded: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+  };
+  const dots: Record<Transaction["status"], string> = {
+    confirmed: "bg-[#14F195]",
+    pending: "bg-yellow-400",
+    failed: "bg-red-400",
+    refunded: "bg-zinc-400",
   };
 
   return (
@@ -103,14 +109,7 @@ function StatusBadge({ status }: { status: Transaction["status"] }) {
         styles[status]
       )}
     >
-      <span
-        className={cn(
-          "w-1.5 h-1.5 rounded-full",
-          status === "confirmed" && "bg-[#14F195]",
-          status === "pending" && "bg-yellow-400",
-          status === "failed" && "bg-red-400"
-        )}
-      />
+      <span className={cn("w-1.5 h-1.5 rounded-full", dots[status])} />
       {status}
     </span>
   );

@@ -4,9 +4,11 @@ import React, { useMemo, useEffect, useRef } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { QRCodeSVG } from "qrcode.react";
 import confetti from "canvas-confetti";
-import { createPaymentRequest } from "@/lib/solanaPay";
+import { createPaymentRequest, DEMO_SOL_AMOUNT } from "@/lib/solanaPay";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 import { SOLANA_NETWORK } from "@/lib/constants";
+
+const IS_DEVNET = SOLANA_NETWORK !== "mainnet-beta";
 
 interface CartItem {
   id: string;
@@ -46,14 +48,17 @@ export function SolanaCheckout({
 }: SolanaCheckoutProps) {
   const confettiFired = useRef(false);
 
-  // Create a new payment request once per checkout session
+  // Create a new payment request once per checkout session.
+  // On devnet: request a tiny 0.001 SOL transfer (no USDC needed, no "unknown token").
+  // On mainnet: request the real USDC amount.
   const paymentRequest = useMemo(
     () =>
       createPaymentRequest(
         merchantWallet,
         total,
         "SolPOS",
-        `${items.length} item${items.length !== 1 ? "s" : ""} — $${total.toFixed(2)} USDC`
+        `${items.length} item${items.length !== 1 ? "s" : ""} — $${total.toFixed(2)} USDC`,
+        { nativeSOL: IS_DEVNET }
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [] // intentionally stable — regenerate only when this modal mounts
@@ -64,6 +69,7 @@ export function SolanaCheckout({
     recipient: merchantWallet,
     amount: total,
     enabled: true,
+    nativeSOL: IS_DEVNET,
   });
 
   // Fire confetti + callback on confirmation
@@ -189,6 +195,26 @@ export function SolanaCheckout({
                     Scan with Phantom · Solflare · any Solana Pay wallet
                   </p>
                 </div>
+
+                {/* Devnet demo notice */}
+                {IS_DEVNET && (
+                  <div className="w-full rounded-xl border border-blue-500/25 bg-blue-500/8 px-4 py-3 space-y-1">
+                    <p className="text-xs font-semibold text-blue-300">
+                      Devnet demo mode
+                    </p>
+                    <p className="text-xs text-blue-300/80 leading-relaxed">
+                      Your wallet will ask you to send{" "}
+                      <span className="font-semibold">
+                        {DEMO_SOL_AMOUNT.toFixed(3)} SOL
+                      </span>{" "}
+                      — a tiny symbolic amount. The POS records this as a{" "}
+                      <span className="font-semibold">
+                        ${total.toFixed(2)} USDC
+                      </span>{" "}
+                      payment. No devnet USDC required.
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </div>

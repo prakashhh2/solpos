@@ -8,10 +8,12 @@ import { Keypad } from "@/components/Keypad";
 import { QRDisplay } from "@/components/QRDisplay";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 import { useTransactionContext } from "@/context/TransactionContext";
-import { createPaymentRequest, computeSplits } from "@/lib/solanaPay";
+import { createPaymentRequest, computeSplits, DEMO_SOL_AMOUNT } from "@/lib/solanaPay";
 import { Transaction, SplitBreakdown } from "@/lib/types";
-import { DEFAULT_SPLITS } from "@/lib/constants";
+import { DEFAULT_SPLITS, SOLANA_NETWORK } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+
+const IS_DEVNET = SOLANA_NETWORK !== "mainnet-beta";
 
 type ChargeStep = "keypad" | "qr";
 
@@ -32,6 +34,7 @@ export default function ChargePage() {
     recipient: publicKey,
     amount,
     enabled: step === "qr" && !demoMode,
+    nativeSOL: IS_DEVNET,
   });
 
   const splitBreakdown: SplitBreakdown | null = useMemo(
@@ -84,7 +87,8 @@ export default function ChargePage() {
         publicKey,
         chargeAmount,
         "Solana POS",
-        `Payment of $${chargeAmount.toFixed(2)}`
+        `Payment of $${chargeAmount.toFixed(2)}`,
+        { nativeSOL: IS_DEVNET }
       );
       setAmount(chargeAmount);
       setPaymentRequest(req);
@@ -180,7 +184,6 @@ export default function ChargePage() {
 
           {demoMode && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#14F195]/10 border border-[#14F195]/20">
-              <span>🎭</span>
               <p className="text-xs text-[#14F195]">
                 Demo mode: payment will auto-confirm in 3 seconds
               </p>

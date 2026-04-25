@@ -34,7 +34,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Merchant Wallet */}
-      <SettingsSection title="Merchant Wallet" icon="👛">
+      <SettingsSection title="Merchant Wallet">
         <div className="flex items-center gap-3">
           <div className="flex-1 px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 font-mono text-sm text-zinc-300 truncate">
             {address || "No wallet connected"}
@@ -61,7 +61,7 @@ export default function SettingsPage() {
       </SettingsSection>
 
       {/* Demo Mode */}
-      <SettingsSection title="Demo Mode" icon="🎭">
+      <SettingsSection title="Demo Mode">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-zinc-300">Use mock data for presentation</p>
@@ -78,14 +78,14 @@ export default function SettingsPage() {
         {demoMode && (
           <div className="mt-3 px-3 py-2 rounded-lg bg-[#9945FF]/10 border border-[#9945FF]/20">
             <p className="text-xs text-[#9945FF]">
-              🎭 Demo mode is ON — all payments will simulate instantly
+              Demo mode is ON — all payments will simulate instantly
             </p>
           </div>
         )}
       </SettingsSection>
 
       {/* Auto-Split Payments */}
-      <SettingsSection title="Auto-Split Payments" icon="🔀">
+      <SettingsSection title="Auto-Split Payments">
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-sm text-zinc-300">Enable revenue splitting</p>
@@ -134,7 +134,7 @@ export default function SettingsPage() {
       </SettingsSection>
 
       {/* Network */}
-      <SettingsSection title="Network" icon="🌐">
+      <SettingsSection title="Network">
         <div className="flex gap-2">
           {(["devnet", "mainnet-beta"] as const).map((net) => (
             <button
@@ -155,7 +155,7 @@ export default function SettingsPage() {
               )}
               aria-pressed={network === net}
             >
-              {net === "devnet" ? "🧪 Devnet" : "🚀 Mainnet"}
+              {net === "devnet" ? "Devnet" : "Mainnet"}
             </button>
           ))}
         </div>
@@ -166,7 +166,7 @@ export default function SettingsPage() {
       </SettingsSection>
 
       {/* Auto-convert SOL */}
-      <SettingsSection title="Auto-Convert SOL to USDC" icon="🔄">
+      <SettingsSection title="Auto-Convert SOL to USDC">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-zinc-300">Automatically swap SOL to USDC</p>
@@ -188,21 +188,16 @@ export default function SettingsPage() {
 
 function SettingsSection({
   title,
-  icon,
   children,
 }: {
   title: string;
-  icon: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="glass rounded-2xl p-5 space-y-4">
-      <div className="flex items-center gap-2">
-        <span className="text-lg">{icon}</span>
-        <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
-          {title}
-        </h2>
-      </div>
+      <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
+        {title}
+      </h2>
       {children}
     </div>
   );

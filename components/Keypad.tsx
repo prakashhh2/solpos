@@ -91,7 +91,6 @@ export function Keypad({ onAmountChange, onCharge }: KeypadProps) {
         )}
         aria-label={`Charge $${display}`}
       >
-        <span>⚡</span>
         Charge ${display}
       </button>
     </div>

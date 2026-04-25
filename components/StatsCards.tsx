@@ -15,21 +15,18 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
     {
       label: "Today's Revenue",
       value: formatUSD(stats.todayRevenue),
-      icon: "💰",
       accent: "from-[#9945FF]/20 to-[#9945FF]/5",
       valueColor: "text-[#9945FF]",
     },
     {
       label: "Total Transactions",
       value: stats.totalTransactions.toString(),
-      icon: "⚡",
       accent: "from-[#14F195]/20 to-[#14F195]/5",
       valueColor: "text-[#14F195]",
     },
     {
       label: "Average Sale",
       value: formatUSD(stats.averageSale),
-      icon: "📊",
       accent: "from-blue-500/20 to-blue-500/5",
       valueColor: "text-blue-400",
     },
@@ -57,7 +54,6 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
               <span className="text-xs uppercase tracking-widest text-zinc-500">
                 {card.label}
               </span>
-              <span className="text-xl">{card.icon}</span>
             </div>
             <p
               className={cn(
