@@ -3,7 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { cn } from "@/lib/utils";
+import { truncateAddress } from "@/lib/utils";
 
 const NAV = [
   { href: "/dashboard", label: "POS", icon: "🛒" },
@@ -17,6 +20,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { connected, publicKey } = useWallet();
 
   return (
     <div className="min-h-screen flex flex-col bg-[rgb(11,17,32)]">
@@ -58,17 +62,30 @@ export default function DashboardLayout({
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-[rgb(31,41,55)] border border-[rgb(55,65,81)] text-xs text-gray-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-dot" />
-              Store Open
-            </span>
-            <span className="px-3 py-1.5 rounded-md bg-blue-600/10 border border-blue-600/30 text-xs text-blue-400 font-medium">
-              {new Date().toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
+          <div className="flex items-center gap-2">
+            {connected && publicKey ? (
+              <span className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-400 font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-dot shrink-0" />
+                {truncateAddress(publicKey.toBase58())}
+              </span>
+            ) : (
+              <span className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/25 text-xs text-amber-400">
+                ⚠ Connect wallet to accept Solana Pay
+              </span>
+            )}
+            <WalletMultiButton
+              style={{
+                background: connected ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.9)",
+                border: "1px solid rgba(59,130,246,0.4)",
+                borderRadius: "0.5rem",
+                padding: "6px 14px",
+                fontSize: "12px",
+                fontWeight: "600",
+                fontFamily: "var(--font-geist-sans)",
+                height: "auto",
+                color: "white",
+              }}
+            />
           </div>
         </div>
       </header>

@@ -2,7 +2,11 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { CameraScanner } from "@/components/CameraScanner";
+import { SolanaCheckout } from "@/components/SolanaCheckout";
+import { useTransactionContext } from "@/context/TransactionContext";
+import { Transaction } from "@/lib/types";
 
 interface Product {
   id: string;
@@ -55,6 +59,9 @@ function CategoryBadge({ cat }: { cat: string }) {
 }
 
 export default function POSDashboard() {
+  const { connected, publicKey } = useWallet();
+  const { addTransaction } = useTransactionContext();
+
   const [form, setForm] = useState({
     name: "",
     brand: "",
@@ -65,10 +72,10 @@ export default function POSDashboard() {
   });
   const [lookingUp, setLookingUp] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showSolanaCheckout, setShowSolanaCheckout] = useState(false);
   const [inventory, setInventory] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [taxRate, setTaxRate] = useState(TAX_RATE_DEFAULT);
-  const [checkoutDone, setCheckoutDone] = useState(false);
   const barcodeRef = useRef<HTMLInputElement>(null);
 
   const handleAILookup = useCallback(async () => {
@@ -176,13 +183,24 @@ export default function POSDashboard() {
 
   const handleCheckout = useCallback(() => {
     if (cart.length === 0) { toast.error("Cart is empty"); return; }
-    setCheckoutDone(true);
-    setTimeout(() => {
-      setCart([]);
-      setCheckoutDone(false);
-      toast.success("Transaction complete! Receipt printed.");
-    }, 2200);
-  }, [cart]);
+    if (!connected || !publicKey) { toast.error("Connect your wallet first to accept Solana Pay"); return; }
+    setShowSolanaCheckout(true);
+  }, [cart, connected, publicKey]);
+
+  const handleSolanaSuccess = useCallback((signature: string, paidTotal: number) => {
+    const tx: Transaction = {
+      id: `tx-${Date.now()}`,
+      signature,
+      amount: paidTotal,
+      timestamp: new Date(),
+      status: "confirmed",
+      reference: signature,
+    };
+    addTransaction(tx);
+    setCart([]);
+    setShowSolanaCheckout(false);
+    toast.success(`Payment confirmed! $${paidTotal.toFixed(2)} USDC received.`);
+  }, [addTransaction]);
 
   return (
     <div className="animate-fade-in h-full">
@@ -193,20 +211,17 @@ export default function POSDashboard() {
         />
       )}
 
-      {checkoutDone && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="flex flex-col items-center gap-4 text-center px-8 py-10 rounded-2xl bg-[rgb(17,24,39)] border border-emerald-500/30 shadow-2xl max-w-sm w-full mx-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center text-3xl">
-              ✅
-            </div>
-            <h2 className="text-xl font-bold text-white">Payment Complete</h2>
-            <p className="text-gray-400 text-sm">
-              Total charged:{" "}
-              <span className="text-emerald-400 font-semibold">${total.toFixed(2)}</span>
-            </p>
-            <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-          </div>
-        </div>
+      {showSolanaCheckout && publicKey && (
+        <SolanaCheckout
+          items={cart.map((i) => ({ id: i.id, name: i.name, qty: i.qty, price: i.price }))}
+          subtotal={subtotal}
+          taxAmt={taxAmt}
+          total={total}
+          taxRate={taxRate}
+          merchantWallet={publicKey}
+          onSuccess={handleSolanaSuccess}
+          onCancel={() => setShowSolanaCheckout(false)}
+        />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] xl:grid-cols-[420px_1fr] gap-5">
@@ -473,24 +488,32 @@ export default function POSDashboard() {
               </div>
             </div>
 
+            {!connected && cart.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-400">
+                ⚠ Connect your wallet (top-right) to accept Solana Pay
+              </div>
+            )}
+
             <button
               onClick={handleCheckout}
-              disabled={cart.length === 0 || checkoutDone}
+              disabled={cart.length === 0}
               className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-base transition-colors flex items-center justify-center gap-2 glow-blue"
             >
-              {checkoutDone ? (
-                <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
-              ) : (
-                <>💳 Checkout — ${total.toFixed(2)}</>
-              )}
+              ◎ Pay with Solana — ${total.toFixed(2)}
             </button>
 
-            {cart.length > 0 && !checkoutDone && (
+            {cart.length > 0 && (
               <div className="grid grid-cols-2 gap-2">
-                <button className="py-2.5 rounded-xl border border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500 text-sm font-medium transition-colors">
+                <button
+                  onClick={() => { setCart([]); toast.success("Cash payment recorded."); }}
+                  className="py-2.5 rounded-xl border border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500 text-sm font-medium transition-colors"
+                >
                   💵 Cash
                 </button>
-                <button className="py-2.5 rounded-xl border border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500 text-sm font-medium transition-colors">
+                <button
+                  onClick={() => { setCart([]); toast.success("Card payment recorded."); }}
+                  className="py-2.5 rounded-xl border border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500 text-sm font-medium transition-colors"
+                >
                   💳 Card
                 </button>
               </div>
