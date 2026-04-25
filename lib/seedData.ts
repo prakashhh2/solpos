@@ -1,4 +1,4 @@
-import { Transaction } from "./types";
+import { Transaction, PaymentMethod, TransactionItem } from "./types";
 
 const DEMO_SIGS = [
   "5h8GNj7pD2mR4xKqWnLc3fVsBtYuZiAoE9kHwX1ePdCq6mNvTrYsFaB7gKjQpW",
@@ -13,21 +13,87 @@ const DEMO_SIGS = [
   "0hQmNq5VbKxHwDsCpTfYuLzG8aEoNiA1eWrPtBmF4jKyUhGqXvZ7nLsEpRwDtM",
 ];
 
-const AMOUNTS = [12.5, 34.99, 8.75, 125.0, 45.5, 67.25, 19.99, 89.0, 52.75, 15.0];
-
 function minutesAgo(min: number): Date {
   return new Date(Date.now() - min * 60 * 1000);
 }
 
-export const SEED_TRANSACTIONS: Transaction[] = [
-  { id: "demo-1", signature: DEMO_SIGS[0], amount: AMOUNTS[0], timestamp: minutesAgo(3), status: "confirmed", reference: "ref1" },
-  { id: "demo-2", signature: DEMO_SIGS[1], amount: AMOUNTS[1], timestamp: minutesAgo(8), status: "confirmed", reference: "ref2" },
-  { id: "demo-3", signature: DEMO_SIGS[2], amount: AMOUNTS[2], timestamp: minutesAgo(15), status: "confirmed", reference: "ref3" },
-  { id: "demo-4", signature: DEMO_SIGS[3], amount: AMOUNTS[3], timestamp: minutesAgo(22), status: "confirmed", reference: "ref4" },
-  { id: "demo-5", signature: DEMO_SIGS[4], amount: AMOUNTS[4], timestamp: minutesAgo(45), status: "confirmed", reference: "ref5" },
-  { id: "demo-6", signature: DEMO_SIGS[5], amount: AMOUNTS[5], timestamp: minutesAgo(90), status: "confirmed", reference: "ref6" },
-  { id: "demo-7", signature: DEMO_SIGS[6], amount: AMOUNTS[6], timestamp: minutesAgo(150), status: "confirmed", reference: "ref7" },
-  { id: "demo-8", signature: DEMO_SIGS[7], amount: AMOUNTS[7], timestamp: minutesAgo(240), status: "confirmed", reference: "ref8" },
-  { id: "demo-9", signature: DEMO_SIGS[8], amount: AMOUNTS[8], timestamp: minutesAgo(360), status: "confirmed", reference: "ref9" },
-  { id: "demo-10", signature: DEMO_SIGS[9], amount: AMOUNTS[9], timestamp: minutesAgo(480), status: "confirmed", reference: "ref10" },
+function hoursAgo(h: number): Date {
+  return new Date(Date.now() - h * 60 * 60 * 1000);
+}
+
+type SeedEntry = {
+  items: TransactionItem[];
+  payment_method: PaymentMethod;
+  minutesAgoVal?: number;
+  hoursAgoVal?: number;
+};
+
+const SEED: SeedEntry[] = [
+  {
+    items: [{ name: "Coca-Cola 12oz", qty: 2, price: 1.99 }, { name: "Lays Chips 1oz", qty: 1, price: 1.50 }],
+    payment_method: "solana",
+    minutesAgoVal: 3,
+  },
+  {
+    items: [{ name: "Chicken Sandwich", qty: 1, price: 8.99 }, { name: "Orange Juice", qty: 1, price: 3.50 }],
+    payment_method: "card",
+    minutesAgoVal: 8,
+  },
+  {
+    items: [{ name: "Red Bull Energy Drink", qty: 1, price: 3.99 }],
+    payment_method: "cash",
+    minutesAgoVal: 15,
+  },
+  {
+    items: [{ name: "USB-C Cable 6ft", qty: 2, price: 12.99 }, { name: "Phone Case", qty: 1, price: 9.99 }],
+    payment_method: "solana",
+    minutesAgoVal: 22,
+  },
+  {
+    items: [{ name: "Coca-Cola 12oz", qty: 3, price: 1.99 }, { name: "Snickers Bar", qty: 2, price: 1.29 }],
+    payment_method: "cash",
+    minutesAgoVal: 45,
+  },
+  {
+    items: [{ name: "Wireless Earbuds", qty: 1, price: 29.99 }],
+    payment_method: "solana",
+    minutesAgoVal: 90,
+  },
+  {
+    items: [{ name: "Chicken Sandwich", qty: 2, price: 8.99 }, { name: "Coca-Cola 12oz", qty: 2, price: 1.99 }],
+    payment_method: "card",
+    minutesAgoVal: 150,
+  },
+  {
+    items: [{ name: "Lays Chips 1oz", qty: 4, price: 1.50 }, { name: "Red Bull Energy Drink", qty: 2, price: 3.99 }],
+    payment_method: "solana",
+    minutesAgoVal: 240,
+  },
+  {
+    items: [{ name: "USB-C Cable 6ft", qty: 1, price: 12.99 }, { name: "Snickers Bar", qty: 3, price: 1.29 }],
+    payment_method: "cash",
+    hoursAgoVal: 6,
+  },
+  {
+    items: [{ name: "Phone Case", qty: 2, price: 9.99 }, { name: "Wireless Earbuds", qty: 1, price: 29.99 }],
+    payment_method: "card",
+    hoursAgoVal: 8,
+  },
 ];
+
+export const SEED_TRANSACTIONS: Transaction[] = SEED.map((s, i) => {
+  const amount = s.items.reduce((sum, it) => sum + it.price * it.qty, 0);
+  const timestamp = s.hoursAgoVal
+    ? hoursAgo(s.hoursAgoVal)
+    : minutesAgo(s.minutesAgoVal ?? 0);
+  return {
+    id: `demo-${i + 1}`,
+    signature: DEMO_SIGS[i],
+    amount: Math.round(amount * 100) / 100,
+    timestamp,
+    status: "confirmed",
+    reference: `ref${i + 1}`,
+    items: s.items,
+    payment_method: s.payment_method,
+  };
+});

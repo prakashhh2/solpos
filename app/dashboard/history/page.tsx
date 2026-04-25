@@ -3,15 +3,30 @@
 import React, { useState, useMemo } from "react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { Transaction } from "@/lib/types";
+import { AnalyticsResult } from "@/app/api/analytics/route";
 import { formatUSD, timeAgo, explorerTxUrl, truncateAddress, downloadCSV } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 type FilterRange = "all" | "today" | "week" | "month";
 
+const PAYMENT_ICON: Record<string, string> = {
+  solana: "◎",
+  card: "💳",
+  cash: "💵",
+};
+
+const PAYMENT_COLOR: Record<string, string> = {
+  solana: "text-[#9945FF]",
+  card: "text-blue-400",
+  cash: "text-emerald-400",
+};
+
 export default function HistoryPage() {
   const { transactions } = useTransactions();
   const [filter, setFilter] = useState<FilterRange>("all");
+  const [analytics, setAnalytics] = useState<AnalyticsResult | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
 
   const filtered = useMemo(() => {
     const now = Date.now();
@@ -30,10 +45,11 @@ export default function HistoryPage() {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const handleExportCSV = () => {
-    const headers = ["ID", "Signature", "Amount (USDC)", "Timestamp", "Status"];
+    const headers = ["ID", "Items", "Payment", "Amount (USDC)", "Timestamp", "Status"];
     const rows = filtered.map((t) => [
       t.id,
-      t.signature,
+      (t.items ?? []).map((i) => `${i.name} x${i.qty}`).join(" | ") || "-",
+      t.payment_method ?? "-",
       t.amount.toFixed(2),
       t.timestamp.toISOString(),
       t.status,
@@ -41,6 +57,36 @@ export default function HistoryPage() {
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
     downloadCSV(csv, `solana-pos-transactions-${new Date().toISOString().split("T")[0]}.csv`);
     toast.success("CSV exported!");
+  };
+
+  const handleGetInsights = async () => {
+    if (filtered.length === 0) { toast.error("No transactions to analyze"); return; }
+    setLoadingAI(true);
+    setAnalytics(null);
+    try {
+      const payload = filtered.map((t) => ({
+        amount: t.amount,
+        timestamp: t.timestamp.toISOString(),
+        payment_method: t.payment_method,
+        items: t.items ?? [],
+      }));
+      const res = await fetch("/api/analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transactions: payload }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        setAnalytics(json.analytics);
+        toast.success("AI insights ready!");
+      } else {
+        toast.error(json.error ?? "Analytics failed");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setLoadingAI(false);
+    }
   };
 
   return (
@@ -53,13 +99,26 @@ export default function HistoryPage() {
             {filtered.length} transactions · {formatUSD(totalVolume)} total
           </p>
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-medium text-white transition-colors"
-          aria-label="Export transactions as CSV"
-        >
-          ↓ Export CSV
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleGetInsights}
+            disabled={loadingAI}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#9945FF] hover:bg-[#7d35d4] disabled:opacity-50 text-sm font-medium text-white transition-colors"
+          >
+            {loadingAI ? (
+              <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Analyzing…</>
+            ) : (
+              <>✨ AI Insights</>
+            )}
+          </button>
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-medium text-white transition-colors"
+            aria-label="Export transactions as CSV"
+          >
+            ↓ Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Filter tabs */}
@@ -81,6 +140,83 @@ export default function HistoryPage() {
         ))}
       </div>
 
+      {/* AI Analytics Panel */}
+      {analytics && (
+        <div className="glass rounded-2xl p-6 space-y-6 border border-[#9945FF]/30">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">✨</span>
+            <h2 className="text-lg font-bold text-white">AI Sales Insights</h2>
+          </div>
+
+          <p className="text-sm text-zinc-300 leading-relaxed">{analytics.summary}</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Best Products */}
+            <div className="bg-white/5 rounded-xl p-4 space-y-3">
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">📦 Best Products</p>
+              {analytics.bestProducts.map((p, i) => (
+                <div key={i} className="flex items-center justify-between gap-2">
+                  <span className="text-sm text-white truncate">{p.name}</span>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs text-[#14F195] font-semibold">{formatUSD(p.revenue)}</div>
+                    <div className="text-xs text-zinc-500">{p.unitsSold} sold</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Rush Hours */}
+            <div className="bg-white/5 rounded-xl p-4 space-y-3">
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">⏰ Rush Hours</p>
+              {analytics.rushHours.length > 0 ? (
+                analytics.rushHours.map((h, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#9945FF]" />
+                    <span className="text-sm text-white">{h}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-zinc-500">Not enough data yet</p>
+              )}
+              <div className="pt-2 border-t border-white/10">
+                <p className="text-xs text-zinc-400 italic">{analytics.loyaltyInsight}</p>
+              </div>
+            </div>
+
+            {/* Payment Breakdown */}
+            <div className="bg-white/5 rounded-xl p-4 space-y-3">
+              <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium">💳 Payment Methods</p>
+              {analytics.paymentBreakdown.map((p, i) => (
+                <div key={i} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn("text-sm", PAYMENT_COLOR[p.method] ?? "text-white")}>
+                      {PAYMENT_ICON[p.method] ?? "?"} {p.method}
+                    </span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs text-white font-semibold">{formatUSD(p.revenue)}</div>
+                    <div className="text-xs text-zinc-500">{p.count} txns</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Suggestions */}
+          <div className="bg-white/5 rounded-xl p-4 space-y-2">
+            <p className="text-xs text-zinc-400 uppercase tracking-wider font-medium mb-3">🚀 Action Plan</p>
+            {analytics.suggestions.map((s, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <span className="mt-0.5 w-5 h-5 rounded-full bg-[#9945FF]/20 text-[#9945FF] text-xs flex items-center justify-center shrink-0 font-bold">
+                  {i + 1}
+                </span>
+                <p className="text-sm text-zinc-200">{s}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
         {filtered.length === 0 ? (
@@ -93,11 +229,11 @@ export default function HistoryPage() {
             <table className="w-full text-sm" aria-label="Transaction history">
               <thead className="border-b border-white/8">
                 <tr>
-                  {["Amount", "Signature", "Date & Time", "Status", "Explorer"].map(
+                  {["Product(s)", "Payment", "Amount", "Signature", "Date & Time", "Status", "Explorer"].map(
                     (h) => (
                       <th
                         key={h}
-                        className="text-left px-6 py-4 text-xs uppercase tracking-widest text-zinc-500 font-medium"
+                        className="text-left px-5 py-4 text-xs uppercase tracking-widest text-zinc-500 font-medium"
                       >
                         {h}
                       </th>
@@ -119,31 +255,49 @@ export default function HistoryPage() {
 }
 
 function HistoryRow({ tx }: { tx: Transaction }) {
+  const itemLabel = tx.items && tx.items.length > 0
+    ? tx.items.map((i) => (i.qty > 1 ? `${i.qty}× ${i.name}` : i.name)).join(", ")
+    : "—";
+
+  const method = tx.payment_method ?? "solana";
+
   return (
     <tr className="border-b border-white/5 hover:bg-white/3 transition-colors">
-      <td className="px-6 py-4">
+      <td className="px-5 py-3 max-w-[200px]">
+        <span className="text-zinc-200 text-xs leading-relaxed line-clamp-2">{itemLabel}</span>
+      </td>
+      <td className="px-5 py-3">
+        <span className={cn("flex items-center gap-1 text-xs font-medium", PAYMENT_COLOR[method] ?? "text-zinc-400")}>
+          {PAYMENT_ICON[method] ?? "?"} {method}
+        </span>
+      </td>
+      <td className="px-5 py-3">
         <span className="font-semibold text-[#14F195]">{formatUSD(tx.amount)}</span>
       </td>
-      <td className="px-6 py-4 text-zinc-500 font-mono text-xs">
+      <td className="px-5 py-3 text-zinc-500 font-mono text-xs">
         {truncateAddress(tx.signature, 8)}
       </td>
-      <td className="px-6 py-4 text-zinc-400">
+      <td className="px-5 py-3 text-zinc-400">
         <div>{tx.timestamp.toLocaleDateString()}</div>
         <div className="text-xs text-zinc-600">{timeAgo(tx.timestamp)}</div>
       </td>
-      <td className="px-6 py-4">
+      <td className="px-5 py-3">
         <StatusBadge status={tx.status} />
       </td>
-      <td className="px-6 py-4">
-        <a
-          href={explorerTxUrl(tx.signature)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[#9945FF] hover:text-[#b070ff] text-xs font-medium transition-colors"
-          aria-label={`View transaction on Solana Explorer`}
-        >
-          ↗ Explorer
-        </a>
+      <td className="px-5 py-3">
+        {tx.payment_method === "solana" || !tx.payment_method ? (
+          <a
+            href={explorerTxUrl(tx.signature)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#9945FF] hover:text-[#b070ff] text-xs font-medium transition-colors"
+            aria-label="View transaction on Solana Explorer"
+          >
+            ↗ Explorer
+          </a>
+        ) : (
+          <span className="text-zinc-700 text-xs">—</span>
+        )}
       </td>
     </tr>
   );

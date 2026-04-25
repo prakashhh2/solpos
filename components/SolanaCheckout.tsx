@@ -52,7 +52,7 @@ export function SolanaCheckout({
       createPaymentRequest(
         merchantWallet,
         total,
-        "QuickPOS",
+        "SolPOS",
         `${items.length} item${items.length !== 1 ? "s" : ""} — $${total.toFixed(2)} USDC`
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "QuickPOS — Smart Retail Point of Sale",
+  title: "SolPOS — Smart Retail Point of Sale",
   description:
     "AI-powered point-of-sale terminal. Scan products, auto-price with Gemini, and checkout instantly.",
   keywords: ["POS", "Retail", "Point of Sale", "AI", "Gemini", "Barcode Scanner"],

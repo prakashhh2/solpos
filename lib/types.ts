@@ -1,4 +1,11 @@
 export type TransactionStatus = "pending" | "confirmed" | "failed";
+export type PaymentMethod = "solana" | "card" | "cash";
+
+export interface TransactionItem {
+  name: string;
+  qty: number;
+  price: number;
+}
 
 export interface Transaction {
   id: string;
@@ -7,6 +14,8 @@ export interface Transaction {
   timestamp: Date;
   status: TransactionStatus;
   reference: string;
+  items?: TransactionItem[];
+  payment_method?: PaymentMethod;
   splits?: SplitBreakdown;
 }
 

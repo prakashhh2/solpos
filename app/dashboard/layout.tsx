@@ -36,7 +36,7 @@ export default function DashboardLayout({
                 Q
               </div>
               <span className="text-gradient-retail hidden sm:block tracking-tight">
-                QuickPOS
+                SolPOS
               </span>
             </Link>
 

@@ -195,12 +195,14 @@ export default function POSDashboard() {
       timestamp: new Date(),
       status: "confirmed",
       reference: signature,
+      items: cart.map((i) => ({ name: i.name, qty: i.qty, price: i.price })),
+      payment_method: "solana",
     };
     addTransaction(tx);
     setCart([]);
     setShowSolanaCheckout(false);
     toast.success(`Payment confirmed! $${paidTotal.toFixed(2)} USDC received.`);
-  }, [addTransaction]);
+  }, [addTransaction, cart]);
 
   return (
     <div className="animate-fade-in h-full">
@@ -505,13 +507,39 @@ export default function POSDashboard() {
             {cart.length > 0 && (
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => { setCart([]); toast.success("Cash payment recorded."); }}
+                  onClick={() => {
+                    addTransaction({
+                      id: `tx-${Date.now()}`,
+                      signature: `cash-${Date.now()}`,
+                      amount: total,
+                      timestamp: new Date(),
+                      status: "confirmed",
+                      reference: `cash-${Date.now()}`,
+                      items: cart.map((i) => ({ name: i.name, qty: i.qty, price: i.price })),
+                      payment_method: "cash",
+                    });
+                    setCart([]);
+                    toast.success("Cash payment recorded.");
+                  }}
                   className="py-2.5 rounded-xl border border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500 text-sm font-medium transition-colors"
                 >
                   💵 Cash
                 </button>
                 <button
-                  onClick={() => { setCart([]); toast.success("Card payment recorded."); }}
+                  onClick={() => {
+                    addTransaction({
+                      id: `tx-${Date.now()}`,
+                      signature: `card-${Date.now()}`,
+                      amount: total,
+                      timestamp: new Date(),
+                      status: "confirmed",
+                      reference: `card-${Date.now()}`,
+                      items: cart.map((i) => ({ name: i.name, qty: i.qty, price: i.price })),
+                      payment_method: "card",
+                    });
+                    setCart([]);
+                    toast.success("Card payment recorded.");
+                  }}
                   className="py-2.5 rounded-xl border border-[rgb(55,65,81)] text-gray-300 hover:text-white hover:border-gray-500 text-sm font-medium transition-colors"
                 >
                   💳 Card
