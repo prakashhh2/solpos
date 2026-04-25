@@ -12,10 +12,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Solana POS — Accept USDC Payments Instantly",
+  title: "QuickPOS — Smart Retail Point of Sale",
   description:
-    "A production-grade point-of-sale terminal powered by Solana Pay. Accept USDC in under 1 second.",
-  keywords: ["Solana", "POS", "USDC", "Payments", "Crypto", "Merchant"],
+    "AI-powered point-of-sale terminal. Scan products, auto-price with Gemini, and checkout instantly.",
+  keywords: ["POS", "Retail", "Point of Sale", "AI", "Gemini", "Barcode Scanner"],
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="antialiased min-h-screen bg-[rgb(10,10,15)] text-white">
+      <body className="antialiased min-h-screen bg-[rgb(11,17,32)] text-white">
         <SolanaProvider>
           <TransactionProvider>
             {children}
@@ -34,8 +34,8 @@ export default function RootLayout({
               position="bottom-right"
               toastOptions={{
                 style: {
-                  background: "rgb(18,18,24)",
-                  border: "1px solid rgba(153,69,255,0.3)",
+                  background: "rgb(17,24,39)",
+                  border: "1px solid rgba(59,130,246,0.3)",
                   color: "white",
                   fontFamily: "var(--font-geist-sans)",
                 },

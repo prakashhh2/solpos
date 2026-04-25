@@ -4,26 +4,27 @@
 
 @layer base {
   :root {
-    --background: 10 10 15;
-    --foreground: 248 248 252;
-    --card: 18 18 24;
-    --card-foreground: 248 248 252;
-    --popover: 18 18 24;
-    --popover-foreground: 248 248 252;
-    --primary: 153 69 255;
+    --background: 11 17 32;
+    --foreground: 241 245 249;
+    --card: 17 24 39;
+    --card-foreground: 241 245 249;
+    --popover: 17 24 39;
+    --popover-foreground: 241 245 249;
+    --primary: 59 130 246;
     --primary-foreground: 255 255 255;
-    --secondary: 26 26 35;
-    --secondary-foreground: 200 200 220;
-    --muted: 26 26 35;
-    --muted-foreground: 140 140 160;
-    --accent: 20 241 149;
-    --accent-foreground: 10 10 15;
+    --secondary: 31 41 55;
+    --secondary-foreground: 156 163 175;
+    --muted: 31 41 55;
+    --muted-foreground: 107 114 128;
+    --accent: 245 158 11;
+    --accent-foreground: 17 24 39;
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
-    --border: 40 40 55;
-    --input: 40 40 55;
-    --ring: 153 69 255;
-    --radius: 0.75rem;
+    --success: 16 185 129;
+    --border: 31 41 55;
+    --input: 31 41 55;
+    --ring: 59 130 246;
+    --radius: 0.5rem;
   }
 
   * {
@@ -31,68 +32,63 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-[rgb(11,17,32)] text-[rgb(241,245,249)] antialiased;
     font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
   }
 }
 
 @layer utilities {
   .glass {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.07);
   }
-  .glow-purple {
-    box-shadow: 0 0 24px rgba(153, 69, 255, 0.35);
+  .card-retail {
+    background: rgb(17, 24, 39);
+    border: 1px solid rgb(31, 41, 55);
+  }
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  .glow-amber {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
   }
   .glow-green {
-    box-shadow: 0 0 24px rgba(20, 241, 149, 0.35);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
   }
-  .text-gradient {
-    background: linear-gradient(135deg, #9945FF, #14F195);
+  .text-gradient-retail {
+    background: linear-gradient(135deg, #3B82F6, #06B6D4);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  .scanner-line {
+    animation: scan 2s ease-in-out infinite;
+  }
 }
 
-@keyframes pulse-ring {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.06); opacity: 0.65; }
-}
 @keyframes fade-in {
-  0% { opacity: 0; transform: translateY(10px); }
+  0% { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 @keyframes scale-in {
-  0% { transform: scale(0.94); opacity: 0; }
+  0% { transform: scale(0.96); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
-@keyframes spin-slow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+@keyframes slide-in-right {
+  0% { transform: translateX(16px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes scan {
+  0%, 100% { top: 0%; opacity: 1; }
+  50% { top: 90%; opacity: 0.6; }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
-.animate-pulse-ring { animation: pulse-ring 2s ease-in-out infinite; }
-.animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+.animate-fade-in { animation: fade-in 0.25s ease-out forwards; }
 .animate-scale-in { animation: scale-in 0.2s ease-out forwards; }
-.animate-spin-slow { animation: spin-slow 3s linear infinite; }
-
-/* Wallet adapter modal theme override */
-.wallet-adapter-modal-wrapper {
-  background: rgb(14, 14, 20) !important;
-  border: 1px solid rgba(153, 69, 255, 0.3) !important;
-  border-radius: 1rem !important;
-  font-family: var(--font-geist-sans), Inter, sans-serif !important;
-}
-.wallet-adapter-modal-title {
-  color: white !important;
-}
-.wallet-adapter-button {
-  font-family: inherit !important;
-  border-radius: 0.75rem !important;
-}
-.wallet-adapter-button-trigger {
-  background: linear-gradient(135deg, #9945FF, #7c3aed) !important;
-  font-family: inherit !important;
-}
+.animate-slide-in-right { animation: slide-in-right 0.2s ease-out forwards; }
+.animate-pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
