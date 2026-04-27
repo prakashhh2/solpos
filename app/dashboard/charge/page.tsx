@@ -8,7 +8,7 @@ import { Keypad } from "@/components/Keypad";
 import { QRDisplay } from "@/components/QRDisplay";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 import { useTransactionContext } from "@/context/TransactionContext";
-import { createPaymentRequest, computeSplits, DEMO_SOL_AMOUNT } from "@/lib/solanaPay";
+import { createPaymentRequest, computeSplits } from "@/lib/solanaPay";
 import { Transaction, SplitBreakdown } from "@/lib/types";
 import { DEFAULT_SPLITS, SOLANA_NETWORK } from "@/lib/constants";
 import { cn } from "@/lib/utils";

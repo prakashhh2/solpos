@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useUSDCBalance } from "@/hooks/useUSDCBalance";
 import { useSolPrice } from "@/hooks/useSolPrice";
 import { useTransactions } from "@/hooks/useTransactions";
-import { USDC_MINT, USDC_DECIMALS, SOLANA_NETWORK } from "@/lib/constants";
+import { USDC_MINT, USDC_DECIMALS } from "@/lib/constants";
 import {
   formatUSD,
   formatUSDC,
@@ -21,13 +21,6 @@ import {
   truncateAddress,
   copyToClipboard,
 } from "@/lib/utils";
-import { cn } from "@/lib/utils";
-
-const EXCHANGES = [
-  { name: "Coinbase", url: "https://coinbase.com" },
-  { name: "Kraken", url: "https://kraken.com" },
-  { name: "Binance", url: "https://binance.com" },
-];
 
 const btnPrimary =
   "w-full py-3 rounded-xl bg-[#9945FF] hover:bg-[#7d35d4] text-white font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed";
@@ -40,15 +33,15 @@ type WithdrawStep = "idle" | "confirm" | "sending" | "done";
 export default function AccountPage() {
   const { publicKey, sendTransaction, connected } = useWallet();
   const { connection } = useConnection();
-  const { usdc, sol, loading, error, refresh } = useUSDCBalance();
+  const { usdc, sol, loading, refresh } = useUSDCBalance();
   const { usd: solPrice, loading: priceLoading } = useSolPrice();
   const { transactions } = useTransactions();
 
   const [destAddress, setDestAddress] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [step, setStep] = useState<WithdrawStep>("idle");
-  const [txSig, setTxSig] = useState<string | null>(null);
-  const [addrError, setAddrError] = useState("");
+  const [, setStep] = useState<WithdrawStep>("idle");
+  const [, setTxSig] = useState<string | null>(null);
+  const [, setAddrError] = useState("");
 
   const confirmed = transactions.filter((t) => t.status === "confirmed");
   const totalRevenue = confirmed.reduce((s, t) => s + t.amount, 0);

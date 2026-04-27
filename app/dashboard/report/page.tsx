@@ -249,7 +249,7 @@ export default function ReportPage() {
 
             {/* Wins */}
             <div className="glass rounded-2xl p-5 space-y-3">
-              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Today's Wins</h3>
+              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Today&apos;s Wins</h3>
               <ul className="space-y-2.5">
                 {report.wins.map((w, i) => (
                   <li key={i} className="flex items-start gap-2.5">

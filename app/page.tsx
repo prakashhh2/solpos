@@ -208,7 +208,7 @@ export default function LandingPage() {
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-slate-400">
           Designed specifically for small-value, high-frequency sales where
-          traditional payment infrastructure doesn't work.
+          traditional payment infrastructure doesn&apos;t work.
         </p>
 
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -245,7 +245,7 @@ export default function LandingPage() {
 
           <div className="mt-6 rounded-2xl bg-blue-500/8 border border-blue-500/20 px-5 py-4">
             <p className="text-sm text-blue-300">
-              <span className="font-bold">Devnet demo mode:</span> No real money needed. The POS requests a tiny symbolic SOL transfer — your wallet always recognises it, no "unknown token" warnings. Perfect for trying before going live.
+              <span className="font-bold">Devnet demo mode:</span> No real money needed. The POS requests a tiny symbolic SOL transfer — your wallet always recognises it, no &quot;unknown token&quot; warnings. Perfect for trying before going live.
             </p>
           </div>
         </div>
