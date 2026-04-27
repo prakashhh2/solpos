@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 const feeRows = [
   { amount: "$0.50", stripe: "$0.31", stripeKeep: "$0.19", stripePct: "62%", sol: "$0.00025", solKeep: "$0.4998" },
@@ -59,9 +60,7 @@ export default function LandingPage() {
       <header className="relative z-10 border-b border-white/10 bg-slate-950/40 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-3 font-black">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg shadow-blue-900/30 text-white font-black">
-              S
-            </div>
+            <Image src="/colored-logo.png" alt="SolPOS" width={40} height={40} className="rounded-xl" />
             <span className="text-xl">SolPOS</span>
           </Link>
 

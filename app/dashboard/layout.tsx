@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -36,9 +37,7 @@ export default function DashboardLayout({
               href="/dashboard"
               className="flex items-center gap-2.5 font-bold text-lg"
             >
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-sm font-black">
-                Q
-              </div>
+              <Image src="/colored-logo.png" alt="SolPOS" width={32} height={32} className="rounded-lg" />
               <span className="text-gradient-retail hidden sm:block tracking-tight">
                 SolPOS
               </span>
